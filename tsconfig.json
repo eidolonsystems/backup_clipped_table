@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "target": "es2015",
+    "outDir": "./dist"
+  },
+  "files": [
+    "table_model.ts",
+    "basic_table_model.ts",
+    "node_modules/kola-signals/dist/signals.d.ts"
+  ]
+}
