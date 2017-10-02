@@ -7,8 +7,17 @@
     "compile": "tsc -p . ",
     "build": "npm run compile && node build/tests/test_runner.js"
   },
+  "devDependencies": {
+    "typescript": ">=2.5.2"
+  },
   "dependencies": {
+    "awesome-typescript-loader": "*",
+    "source-map-loader": "*",
     "kola-signals": ">=0.1.2",
-    "alsatian": ">=2.0.0"
+    "alsatian": ">=2.0.0",
+    "react": "*",
+    "react-dom": "*",
+    "@types/react": "*",
+    "@types/react-dom": "*"
   }
 }
