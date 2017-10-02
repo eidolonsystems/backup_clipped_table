@@ -34,10 +34,15 @@ class BasicTableModel extends TableModel {
   /** Adds a row to the table.
    * @param row - The row to add.
    * @param index - The index to add the row to.
+   * @throws RangeError - The length of the row being added is not exactly equal
+   *                      to this table's columnCount.
    */
   public addRow(row: Array<any>, index: number = -1): void {
+    if(row.length != this.columnCount) {
+      throw new RangeError();
+    }
     if(index >= this.values.length || index < 0) {
-      let index = this.values.push(row.slice());
+      let index = this.values.push(row.slice()) - 1;
       this.rowAddedSignal.dispatch(index);
     } else {
       this.values.splice(index, 0, row.slice());

@@ -1,0 +1,14 @@
+{
+  "name": "clipped_table",
+  "version": "0.1.0",
+  "description": "Provides models to represent and display large data models.",
+  "license": "GPL-3.0",
+  "scripts": {
+    "compile": "tsc -p . ",
+    "build": "npm run compile && node build/tests/test_runner.js"
+  },
+  "dependencies": {
+    "kola-signals": ">=0.1.2",
+    "alsatian": ">=2.0.0"
+  }
+}

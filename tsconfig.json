@@ -4,12 +4,13 @@
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "target": "es2015",
-    "outDir": "./dist"
+    "experimentalDecorators": true,
+    "target": "es5",
+    "outDir": "./build"
   },
-  "files": [
-    "table_model.ts",
-    "basic_table_model.ts",
+  "include": [
+    "./source/*.ts",
+    "./tests/*.ts",
     "node_modules/kola-signals/dist/signals.d.ts"
   ]
 }
