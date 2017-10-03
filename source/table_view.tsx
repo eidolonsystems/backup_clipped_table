@@ -3,14 +3,22 @@ import * as ReactDOM from 'react-dom';
 import * as $ from 'jquery';
 import {TableModel} from './table_model';
 
+enum TableViewInitialization {
+  CONTAINER,
+  TABLE,
+  COMPLETE
+};
+
 interface TableViewProperties {
   model: TableModel;
+  viewWidth: string;
+  viewHeight: string;
 }
 
 interface TableViewState {
   viewX: number;
   viewY: number;
-  containerId: string;
+  initialization: TableViewInitialization;
 }
 
 class TableView extends React.Component<TableViewProperties, TableViewState> {
@@ -19,27 +27,46 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     this.state = {
       viewX: 0,
       viewY: 0,
-      containerId: null
+      initialization: TableViewInitialization.CONTAINER
+    };
+    this.divStyle = {
+      width: this.props.viewWidth,
+      height: this.props.viewHeight,
+      overflow: 'auto' as 'auto'
     };
   }
 
   public render(): JSX.Element {
-    if(this.state.containerId == null) {
-      return <div></div>;
+    if(this.state.initialization == TableViewInitialization.CONTAINER) {
+      return (
+        <div ref={(element) => {this.container = element;}}
+             style={this.divStyle}>
+        </div>);
     }
-    let element = document.getElementById(this.state.containerId);
-    let style = window.getComputedStyle(element, null).getPropertyValue(
-      'font-size');
-    let fontSize = Math.floor(parseFloat(style));
-    let height = element.scrollHeight;
-    if(height == 0) {
-      height = $(window).height();
-    }
-    let displayedRowCount = (2 * height) / fontSize;
-    let topRow = Math.floor(this.state.viewY / fontSize);
-    let bottomRow = Math.min(topRow + displayedRowCount,
-      this.props.model.rowCount);
     let rows: Array<JSX.Element> = [];
+    let headers: Array<JSX.Element> = [];
+    for(let columnIndex = 0; columnIndex < this.props.model.columnCount;
+        ++columnIndex) {
+      headers.push(<th>{this.props.model.getName(columnIndex)}</th>);
+    }
+    rows.push(<tr>{headers}</tr>);
+    let rowHeight = 0;
+    let topRow = 0;
+    let bottomRow = 0;
+    if(this.state.initialization == TableViewInitialization.TABLE) {
+      let style = window.getComputedStyle(
+        this.container, null).getPropertyValue('font-size');
+      rowHeight = Math.floor(parseFloat(style));
+      bottomRow = Math.min(1, this.props.model.rowCount);
+    } else {
+      rowHeight = this.table.rows[0].offsetHeight;
+      let viewHeight = Math.floor(parseFloat(window.getComputedStyle(
+        this.container, null).getPropertyValue('height')));
+      let displayedRowCount = Math.ceil(viewHeight / rowHeight) + 1;
+      topRow = Math.floor(this.state.viewY / rowHeight);
+      bottomRow = Math.min(topRow + displayedRowCount,
+        this.props.model.rowCount);
+    }
     for(let rowIndex = topRow; rowIndex < bottomRow; ++rowIndex) {
       let row: Array<JSX.Element> = [];
       for(let columnIndex = 0; columnIndex < this.props.model.columnCount;
@@ -48,30 +75,55 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
       }
       rows.push(<tr>{row}</tr>);
     }
-    let divStyle = {
-      height: fontSize * this.props.model.rowCount + 'px'
+    let innerStyle = {
+      height: rowHeight * (this.props.model.rowCount + 3) - this.state.viewY,
+      paddingTop: this.state.viewY
     };
     return (
-      <div style={divStyle} onScroll={this.onScroll}>
-        <table>
-          {rows}
-        </table>
+      <div ref={(element) => {this.container = element;}}
+           style={this.divStyle}
+           onScroll={this.onScroll.bind(this)}>
+        <div style={innerStyle}>
+          <table ref={(element) => {this.table = element;}}>
+            {rows}
+          </table>
+        </div>
       </div>);
   }
 
   public componentDidMount(): void {
-    let containerId = ReactDOM.findDOMNode(
-      this as React.ReactInstance).parentNode.attributes.getNamedItem(
-      'id').value;
     this.setState(
       {
-        containerId: containerId
+        initialization: TableViewInitialization.TABLE
       });
   }
 
-  private onScroll(): void {
-    console.log('scrolled');
+  public componentDidUpdate(): void {
+    setTimeout(() => {
+      window.requestAnimationFrame(() => {
+        if(this.state.initialization == TableViewInitialization.TABLE) {
+          if(this.props.model.rowCount > 0) {
+            this.setState(
+              {
+                initialization: TableViewInitialization.COMPLETE
+              });
+          }
+        }
+      });
+    }, 0);
   }
+
+  private onScroll(): void {
+    this.setState(
+      {
+        viewX: $(this.container).scrollLeft(),
+        viewY: $(this.container).scrollTop()
+      });
+  }
+
+  private divStyle: any;
+  private container: HTMLDivElement;
+  private table: HTMLTableElement;
 }
 
 export {TableView};
