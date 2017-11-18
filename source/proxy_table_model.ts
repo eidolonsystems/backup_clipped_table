@@ -5,7 +5,9 @@ import {TableModel} from './table_model';
  * model. */
 class ProxyTableModel extends TableModel {
 
-  /** Creates a ProxyTableModel. */
+  /** Creates a ProxyTableModel.
+   * @param source - The underlying model to proxy.
+   */
   public constructor(source: TableModel) {
     super();
     this.source = source;

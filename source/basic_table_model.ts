@@ -4,7 +4,9 @@ import {TableModel} from './table_model';
 /** Implements a TableModel programmatically. */
 class BasicTableModel extends TableModel {
 
-  /** Creates an empty BasicTableModel. */
+  /** Creates an empty BasicTableModel.
+   * @param columnNames - A names of this model's columns.
+   */
   public constructor(columnNames: Array<string>) {
     super();
     this.columnNames = columnNames.slice();
@@ -15,7 +17,7 @@ class BasicTableModel extends TableModel {
     this.rowMovedSignal = new Dispatcher<[number, number]>();
   }
 
-  /** Sets a value
+  /** Sets a value.
    * @param row - The value's row.
    * @param column - The value's column.
    * @param value - The value to set.
@@ -78,8 +80,12 @@ class BasicTableModel extends TableModel {
       return;
     }
     let sourceRow = this.values[source];
-    this.values.splice(destination, 0, sourceRow);
     this.values.splice(source, 1);
+    if(destination > source) {
+      this.values.splice(destination - 1, 0, sourceRow);
+    } else {
+      this.values.splice(destination, 0, sourceRow);
+    }
     this.rowMovedSignal.dispatch([source, destination]);
   }
 

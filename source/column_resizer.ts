@@ -73,16 +73,33 @@ class ColumnResizer {
       return this.handleHover(event);
     }
     let xDelta = event.clientX - this.xPosition;
-    if(xDelta == 0) {
+    this.xPosition = event.clientX;
+    let boundingRectangle = this.element.getBoundingClientRect();
+    if(xDelta == 0 ||
+        xDelta > 0 && event.clientX < boundingRectangle.left ||
+        xDelta < 0 && event.clientX > boundingRectangle.right) {
       return;
     }
-    this.xPosition = event.clientX;
-    this.columnWidths[this.index] += xDelta;
-    this.columnWidths[this.index + 1] -= xDelta;
+    if(xDelta < 0) {
+      let previousWidth = this.columnWidths[this.index];
+      this.columnWidths[this.index] = Math.max(
+        this.columnWidths[this.index] + xDelta,
+        ColumnResizer.MIN_WIDTH);
+      this.columnWidths[this.index + 1] -=
+        this.columnWidths[this.index] - previousWidth;
+    } else {
+      let previousWidth = this.columnWidths[this.index + 1];
+      this.columnWidths[this.index + 1] = Math.max(
+        this.columnWidths[this.index + 1] - xDelta,
+        ColumnResizer.MIN_WIDTH);
+      this.columnWidths[this.index] -=
+        this.columnWidths[this.index + 1] - previousWidth;
+    }
     this.resizeCallback();
   }
 
   private static RESIZE_RANGE = 5;
+  private static MIN_WIDTH = 10;
   private state: number;
   private xPosition: number;
   private element: HTMLElement;
