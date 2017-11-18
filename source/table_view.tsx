@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as $ from 'jquery';
 import {TableModel} from './table_model';
+import {ColumnResizer} from './column_resizer';
 
 enum TableViewInitialization {
   CONTAINER,
@@ -38,13 +39,15 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     for(let i = 0; i < this.props.model.columnCount; ++i) {
       this.columnWidths.push(0);
     }
+    this.columnResizer = new ColumnResizer(this.columnWidths,
+      this.onColumnResized.bind(this));
   }
 
   public render(): JSX.Element {
     if(this.state.initialization == TableViewInitialization.CONTAINER) {
       return (
         <div ref={(element) => {this.container = element;}}
-             style={this.divStyle}>
+            style={this.divStyle}>
         </div>);
     }
     let rowHeight = 0;
@@ -83,9 +86,11 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     }
     let rows: Array<JSX.Element> = [];
     rows.push.apply(rows, columns);
-    rows.push(<thead onMouseMove={this.onMouseMoveTableHeader.bind(this)}>
-                <tr>{headers}</tr>
-              </thead>);
+    rows.push(
+      <thead
+          onMouseMove={this.columnResizer.onMouseMove.bind(this.columnResizer)}>
+        <tr>{headers}</tr>
+      </thead>);
     for(let rowIndex = topRow; rowIndex < bottomRow; ++rowIndex) {
       let row: Array<JSX.Element> = [];
       for(let columnIndex = 0; columnIndex < this.props.model.columnCount;
@@ -159,29 +164,12 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
       });
   }
 
-  private onMouseMoveTableHeader(event: MouseEvent): void {
-    if(this.columnWidths.length == 0) {
-      return;
-    }
-    const RESIZE_RANGE = 5;
-    let columnSelected = -1;
-    for(let i = 0; i < this.props.model.columnCount; ++i) {
-      let element = document.elementFromPoint(event.clientX, event.clientY) as
-        HTMLElement;
-      let elementLeft = element.getBoundingClientRect().left;
-      let elementRight = element.getBoundingClientRect().right;
-      if(event.clientX >= elementLeft &&
-          event.clientX <= elementLeft + RESIZE_RANGE ||
-          event.clientX >= elementRight - RESIZE_RANGE) {
-        element.style.cursor = 'ew-resize';
-        return;
-      } else {
-        element.style.cursor = 'default';
-      }
-    }
+  private onColumnResized(): void {
+    this.forceUpdate();
   }
 
   private divStyle: any;
+  private columnResizer: ColumnResizer;
   private columnWidths: Array<number>;
   private container: HTMLDivElement;
   private table: HTMLTableElement;
