@@ -1,26 +1,27 @@
 import {Dispatcher} from 'kola-signals';
-import {TableModel} from './table_model';
+import {RemovingRowEvent, RowAddedEvent, RowMovedEvent, TableModel,
+  ValueChangedEvent} from './table_model';
 
-/** Implements a TableModel programmatically. */
-class BasicTableModel extends TableModel {
+/** Implements a TableModel using an 2-dimensional array. */
+class ArrayTableModel extends TableModel {
 
-  /** Creates an empty BasicTableModel.
+  /** Creates an empty ArrayTableModel.
    * @param columnNames - A names of this model's columns.
    */
   public constructor(columnNames: Array<string>) {
     super();
     this.columnNames = columnNames.slice();
     this.values = new Array<Array<any>>();
-    this.valueChangedSignal = new Dispatcher<[number, number, any]>();
-    this.rowAddedSignal = new Dispatcher<number>();
-    this.removingRowSignal = new Dispatcher<number>();
-    this.rowMovedSignal = new Dispatcher<[number, number]>();
+    this.valueChangedSignal = new Dispatcher<ValueChangedEvent>();
+    this.rowAddedSignal = new Dispatcher<RowAddedEvent>();
+    this.removingRowSignal = new Dispatcher<RemovingRowEvent>();
+    this.rowMovedSignal = new Dispatcher<RowMovedEvent>();
   }
 
-  /** Sets a value.
-   * @param row - The value's row.
-   * @param column - The value's column.
-   * @param value - The value to set.
+  /** Sets a value at a specified row and column.
+   * @param row - The row to set.
+   * @param column - The column to set.
+   * @param value - The value to set at the specified row and column.
    * @throws RangeError - The row or column is not within this table's range.
    */
   public setValue(row: number, column: number, value: any): void {
@@ -29,8 +30,12 @@ class BasicTableModel extends TableModel {
       throw new RangeError();
     }
     let previousValue = this.values[row][column];
+    if(previousValue === value) {
+      return;
+    }
     this.values[row][column] = value;
-    this.valueChangedSignal.dispatch([row, column, previousValue]);
+    this.valueChangedSignal.dispatch(
+      new ValueChangedEvent(row, column, previousValue));
   }
 
   /** Adds a row to the table.
@@ -38,18 +43,20 @@ class BasicTableModel extends TableModel {
    * @param index - The index to add the row to.
    * @throws RangeError - The length of the row being added is not exactly equal
    *                      to this table's columnCount.
+   * @throws RangeError - The index specified is not within range.
    */
-  public addRow(row: Array<any>, index: number = -1): void {
+  public addRow(row: Array<any>, index?: number): void {
     if(row.length != this.columnCount) {
       throw new RangeError();
     }
-    if(index >= this.values.length || index < 0) {
-      let index = this.values.push(row.slice()) - 1;
-      this.rowAddedSignal.dispatch(index);
-    } else {
-      this.values.splice(index, 0, row.slice());
-      this.rowAddedSignal.dispatch(index);
+    if(!index) {
+      index = this.values.length;
     }
+    if(index > this.values.length || index < 0) {
+      throw new RangeError();
+    }
+    this.values.splice(index, 0, row.slice());
+    this.rowAddedSignal.dispatch(new RowAddedEvent(index));
   }
 
   /** Removes a row from the table.
@@ -57,12 +64,11 @@ class BasicTableModel extends TableModel {
    * @throws RangeError - The index is not within this table's range.
    */
   public removeRow(index: number): void {
-    if(index >= 0 && index < this.values.length) {
-      this.removingRowSignal.dispatch(index);
-      this.values.splice(index, 1);
-    } else {
+    if(index < 0 || index >= this.values.length) {
       throw new RangeError();
     }
+    this.removingRowSignal.dispatch(new RemovingRowEvent(index));
+    this.values.splice(index, 1);
   }
 
   /** Moves a row.
@@ -86,7 +92,7 @@ class BasicTableModel extends TableModel {
     } else {
       this.values.splice(destination, 0, sourceRow);
     }
-    this.rowMovedSignal.dispatch([source, destination]);
+    this.rowMovedSignal.dispatch(new RowMovedEvent(source, destination));
   }
 
   public get rowCount(): number {
@@ -106,29 +112,29 @@ class BasicTableModel extends TableModel {
   }
 
   public connectValueChangedSignal(
-      slot: (update: [number, number, any]) => void): any {
+      slot: (event: ValueChangedEvent) => void): any {
     return this.valueChangedSignal.listen(slot);
   }
 
-  public connectRowAddedSignal(slot: (row: number) => void): any {
+  public connectRowAddedSignal(slot: (event: RowAddedEvent) => void): any {
     return this.rowAddedSignal.listen(slot);
   }
 
-  public connectRemovingRowSignal(slot: (row: number) => void): any {
+  public connectRemovingRowSignal(
+      slot: (event: RemovingRowEvent) => void): any {
     return this.removingRowSignal.listen(slot);
   }
 
-  public connectRowMovedSignal(
-      slot: (update: [number, number]) => void): any {
+  public connectRowMovedSignal(slot: (event: RowMovedEvent) => void): any {
     return this.rowMovedSignal.listen(slot);
   }
 
   private columnNames: Array<string>;
   private values: Array<Array<any>>;
-  private valueChangedSignal: Dispatcher<[number, number, any]>;
-  private rowAddedSignal: Dispatcher<number>;
-  private removingRowSignal: Dispatcher<number>;
-  private rowMovedSignal: Dispatcher<[number, number]>;
+  private valueChangedSignal: Dispatcher<ValueChangedEvent>;
+  private rowAddedSignal: Dispatcher<RowAddedEvent>;
+  private removingRowSignal: Dispatcher<RemovingRowEvent>;
+  private rowMovedSignal: Dispatcher<RowMovedEvent>;
 }
 
-export {BasicTableModel};
+export {ArrayTableModel};

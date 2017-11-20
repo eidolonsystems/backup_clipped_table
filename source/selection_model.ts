@@ -1,6 +1,7 @@
 import {Dispatcher} from 'kola-signals';
-import {BasicTableModel} from './basic_table_model';
-import {TableModel} from './table_model';
+import {ArrayTableModel} from './array_table_model';
+import {RemovingRowEvent, RowAddedEvent, RowMovedEvent, TableModel,
+  ValueChangedEvent} from './table_model';
 import {TableView} from './table_view';
 
 /** Implements a TableModel used to keep track of selected items. */
@@ -14,7 +15,7 @@ class SelectionModel extends TableModel {
     super();
     this.view = view;
     this.source = source;
-    this.selectionModel = new BasicTableModel(['Selected']);
+    this.selectionModel = new ArrayTableModel(['Selected']);
     for(let i = 0; i < this.source.rowCount; ++i) {
       this.selectionModel.addRow([false]);
     }
@@ -104,32 +105,33 @@ class SelectionModel extends TableModel {
   }
 
   public connectValueChangedSignal(
-      slot: (update: [number, number, any]) => void): any {
+      slot: (event: ValueChangedEvent) => void): any {
     return this.selectionModel.connectValueChangedSignal(slot);
   }
 
-  public connectRowAddedSignal(slot: (row: number) => void): any {
+  public connectRowAddedSignal(slot: (event: RowAddedEvent) => void): any {
     return this.selectionModel.connectRowAddedSignal(slot);
   }
 
-  public connectRemovingRowSignal(slot: (row: number) => void): any {
+  public connectRemovingRowSignal(
+      slot: (event: RemovingRowEvent) => void): any {
     return this.selectionModel.connectRemovingRowSignal(slot);
   }
 
-  public connectRowMovedSignal(slot: (update: [number, number]) => void): any {
+  public connectRowMovedSignal(slot: (event: RowMovedEvent) => void): any {
     return this.selectionModel.connectRowMovedSignal(slot);
   }
 
-  private onRowAdded(row: number): void {
-    this.selectionModel.addRow([false]);
+  private onRowAdded(event: RowAddedEvent): void {
+    this.selectionModel.addRow([false], event.index);
   }
 
-  private onRemovingRow(row: number): void {
-    this.selectionModel.removeRow(row);
+  private onRemovingRow(event: RemovingRowEvent): void {
+    this.selectionModel.removeRow(event.index);
   }
 
-  private onRowMoved(update: [number, number]): void {
-    this.selectionModel.moveRow(update[0], update[1]);
+  private onRowMoved(event: RowMovedEvent): void {
+    this.selectionModel.moveRow(event.source, event.destination);
   }
 
   private continuousSelect(row: number): void {
@@ -216,7 +218,7 @@ class SelectionModel extends TableModel {
   private startRow: number;
   private endRow: number;
   private lastMouseEvent: MouseEvent;
-  private selectionModel: BasicTableModel;
+  private selectionModel: ArrayTableModel;
 }
 
 export {SelectionModel};

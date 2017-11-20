@@ -1,10 +1,11 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as $ from 'jquery';
-import {BasicTableModel} from './basic_table_model';
 import {ColumnResizer} from './column_resizer';
 import {SelectionModel} from './selection_model';
-import {TableModel} from './table_model';
+import {RemovingRowEvent, RowAddedEvent, RowMovedEvent, TableModel,
+  ValueChangedEvent} from './table_model';
+import {computeWidth, computeHeight} from './font_metrics';
 
 enum TableViewInitialization {
   CONTAINER,
@@ -91,13 +92,18 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     }
     let columns: Array<JSX.Element> = [];
     let headers: Array<JSX.Element> = [];
+    let inlineStyle = {
+      display: 'inline',
+      whiteSpace: 'nowrap'
+    };
     for(let columnIndex = 0; columnIndex < this.props.model.columnCount;
         ++columnIndex) {
       let columnStyle = {
         width: `${this.columnWidths[columnIndex]}px`
       };
       columns.push(<col style={columnStyle} />);
-      headers.push(<th>{this.props.model.getName(columnIndex)}</th>);
+      headers.push(<th><div style={inlineStyle}>
+        {this.props.model.getName(columnIndex)}</div></th>);
     }
     let body: Array<JSX.Element> = [];
     for(let rowIndex = this.topVisibleRow; rowIndex < this.bottomVisibleRow;
@@ -232,31 +238,32 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     this.forceUpdate();
   }
 
-  private onModelValueChanged(update: [number, number, any]): void {
-    if(update[0] < this.topVisibleRow || update[0] > this.bottomVisibleRow) {
+  private onModelValueChanged(event: ValueChangedEvent): void {
+    if(event.row < this.topVisibleRow || event.row > this.bottomVisibleRow) {
       return;
     }
     this.forceUpdate();
   }
 
-  private onModelRowAdded(index: number): void {
-    if(index > this.bottomVisibleRow) {
+  private onModelRowAdded(event: RowAddedEvent): void {
+    if(event.index > this.bottomVisibleRow) {
       return;
     }
     this.forceUpdate();
   }
 
-  private onModelRemovingRow(index: number): void {
-    if(index > this.bottomVisibleRow) {
+  private onModelRemovingRow(event: RemovingRowEvent): void {
+    if(event.index > this.bottomVisibleRow) {
       return;
     }
     this.forceUpdate();
   }
 
-  private onModelRowMoved(update: [number, number]): void {
-    if(update[0] < this.topVisibleRow && update[1] < this.topVisibleRow ||
-        update[0] > this.bottomVisibleRow &&
-        update[1] > this.bottomVisibleRow) {
+  private onModelRowMoved(event: RowMovedEvent): void {
+    if(event.source < this.topVisibleRow &&
+        event.destination < this.topVisibleRow ||
+        event.source > this.bottomVisibleRow &&
+        event.destination > this.bottomVisibleRow) {
       return;
     }
     this.forceUpdate();

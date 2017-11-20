@@ -1,11 +1,13 @@
 import {Expect, Test} from "alsatian";
-import {BasicTableModel} from '../source/basic_table_model';
+import {ArrayTableModel} from '../source/array_table_model';
+import {RemovingRowEvent, RowAddedEvent, RowMovedEvent, TableModel,
+  ValueChangedEvent} from '../source/table_model';
 
-/** Tests the BasicTableModel. */
-class BasicTableModelTester {
+/** Tests the ArrayTableModel. */
+class ArrayTableModelTester {
 
   /** Tests adding rows.
-   * Construct a BasicTableModel with two columns 'A' and 'B'.
+   * Construct a ArrayTableModel with two columns 'A' and 'B'.
    * Expect a row count of 0 and column count of 2.
    * Validate the column names.
    * Add a row with three values at index 0.
@@ -22,10 +24,10 @@ class BasicTableModelTester {
    */
   @Test()
   public testAddRow(): void {
-    let model = new BasicTableModel(['A', 'B']);
+    let model = new ArrayTableModel(['A', 'B']);
     let receivedIndex = undefined;
-    let rowAddedSlot = (index: number) => {
-      receivedIndex = index;
+    let rowAddedSlot = (event: RowAddedEvent) => {
+      receivedIndex = event.index;
     };
     model.connectRowAddedSignal(rowAddedSlot);
     Expect(model.rowCount).toEqual(0);
@@ -49,4 +51,4 @@ class BasicTableModelTester {
   }
 }
 
-export {BasicTableModelTester};
+export {ArrayTableModelTester};

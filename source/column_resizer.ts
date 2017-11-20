@@ -4,7 +4,14 @@ enum State {
   CLICKED,
 }
 
+/** Provides the functionality needed to resize a TableView's columns. */
 class ColumnResizer {
+
+  /** Constructs a ColumnResizer.
+   * @param columnWidths - The list of the TableView's column widths.
+   * @param resizeCallback - The callback used to indicate a change in a
+   *        column's width.
+   */
   constructor(columnWidths: Array<number>, resizeCallback: () => void) {
     this.state = State.NONE;
     this.xPosition = -1;
@@ -14,6 +21,9 @@ class ColumnResizer {
     this.resizeCallback = resizeCallback;
   }
 
+  /** Handles moving the mouse over the table's header region.
+   * @param event - The event describing the mouse move.
+   */
   public onMouseMove(event: MouseEvent): void {
     if(this.state == State.NONE) {
       this.handleNone(event);

@@ -1,5 +1,101 @@
 import {Dispatcher} from 'kola-signals';
 
+/** Indicates that the value in a TableModel changed. */
+class ValueChangedEvent {
+
+  /** Constructs a ValueChangedEvent.
+   * @param row - The changed value's row.
+   * @param column - The changed value's column.
+   * @param previousValue - The value before the change was made.
+   */
+  constructor(row: number, column: number, previousValue: any) {
+    this._row = row;
+    this._column = column;
+    this._previousValue = previousValue;
+  }
+
+  /** Returns the changed value's row. */
+  public get row(): number {
+    return this._row;
+  }
+
+  /** Returns the changed value's column. */
+  public get column(): number {
+    return this._column;
+  }
+
+  /** Returns the value stored before the change. */
+  public get previousValue(): any {
+    return this._previousValue;
+  }
+
+  private _row: number;
+  private _column: number;
+  private _previousValue: number;
+};
+
+/** Indicates that a row was added to a TableModel. */
+class RowAddedEvent {
+
+  /** Constructs a RowAddedEvent.
+   * @param index - The index of the row that was added.
+   */
+  constructor(index: number) {
+    this._index = index;
+  }
+
+  /** Returns the index of the row that was added. */
+  public get index(): number {
+    return this._index;
+  }
+
+  private _index: number;
+};
+
+/** Indicates that a row is about to be removed. */
+class RemovingRowEvent {
+
+  /** Constructs a RemovingRowEvent.
+   * @param index - The index of the row that is about to be removed.
+   */
+  constructor(index: number) {
+    this._index = index;
+  }
+
+  /** Returns the index of the row that is about to be removed. */
+  public get index(): number {
+    return this._index;
+  }
+
+  private _index: number;
+};
+
+/** Indicates that a row has been moved. */
+class RowMovedEvent {
+
+  /** Constructs a RowMovedEvent.
+   * @param source - The index of the row that was moved.
+   * @param destination - The index that the row was moved to.
+   */
+  constructor(source: number, destination: number) {
+    this._source = source;
+    this._destination = destination;
+  }
+
+  /** Returns the index of the row that was moved. */
+  public get source(): number {
+    return this._source;
+  }
+
+  /** Returns the index that the row was moved to. */
+  public get destination(): number {
+    return this._destination;
+  }
+
+  private _source: number;
+  private _destination: number;
+};
+
 /** Base class representing a table based data model. */
 abstract class TableModel {
 
@@ -31,32 +127,34 @@ abstract class TableModel {
 
   /** Connects a slot to the signal indicating that a value in the table
    *  changed.
-   * @param slot - A slot receiving the triple [row, column, previousValue].
+   * @param slot - A slot receiving the ValueChangedEvent.
    * @return The connection between the signal and the slot.
    */
   public abstract connectValueChangedSignal(
-    slot: (update: [number, number, any]) => void): any;
+    slot: (event: ValueChangedEvent) => void): any;
 
   /** Connects a slot to the signal indicating that a row has been added.
-   * @param slot - A slot receiving the index of the added row.
+   * @param slot - A slot receiving the RowAddedEvent.
    * @return The connection between the signal and the slot.
    */
-  public abstract connectRowAddedSignal(slot: (row: number) => void): any;
+  public abstract connectRowAddedSignal(
+    slot: (event: RowAddedEvent) => void): any;
 
   /** Connects a slot to the signal indicating that a row is about to be
    *  removed.
-   * @param slot - A slot receiving the index of the row that will be removed.
+   * @param slot - A slot receiving the RemovingRowEvent.
    * @return The connection between the signal and the slot.
    */
-  public abstract connectRemovingRowSignal(slot: (row: number) => void): any;
+  public abstract connectRemovingRowSignal(
+    slot: (event: RemovingRowEvent) => void): any;
 
   /** Connects a slot to the signal indicating that a row was moved.
-   * @param slot - A slot receiving the index that the row was moved from and
-   *               the index that the row was moved to.
+   * @param slot - A slot receiving the RowMovedEvent.
    * @return The connection between the signal and the slot.
    */
   public abstract connectRowMovedSignal(
-    slot: (update: [number, number]) => void): any;
+    slot: (event: RowMovedEvent) => void): any;
 }
 
-export {TableModel};
+export {ValueChangedEvent, RowAddedEvent, RemovingRowEvent, RowMovedEvent,
+  TableModel};
