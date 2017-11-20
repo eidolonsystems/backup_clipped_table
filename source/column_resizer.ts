@@ -1,119 +1,185 @@
-enum State {
-  NONE,
-  HOVER,
-  CLICKED,
-}
+import {TableView} from './table_view';
 
 /** Provides the functionality needed to resize a TableView's columns. */
 class ColumnResizer {
 
   /** Constructs a ColumnResizer.
-   * @param columnWidths - The list of the TableView's column widths.
+   * @param view - The TableView to resize.
+   * @param columnWidths - The list of column widths to resize.
    * @param resizeCallback - The callback used to indicate a change in a
    *        column's width.
    */
-  constructor(columnWidths: Array<number>, resizeCallback: () => void) {
-    this.state = State.NONE;
-    this.xPosition = -1;
-    this.element = null;
-    this.index = -1;
+  constructor(view: TableView, columnWidths: Array<number>,
+      resizeCallback: () => void) {
+    this.view = view;
     this.columnWidths = columnWidths;
     this.resizeCallback = resizeCallback;
+    this.columnIndex = -1;
+    this.s0();
   }
 
   /** Handles moving the mouse over the table's header region.
    * @param event - The event describing the mouse move.
    */
   public onMouseMove(event: MouseEvent): void {
-    if(this.state == State.NONE) {
-      this.handleNone(event);
-    } else if(this.state == State.HOVER) {
-      this.handleHover(event);
-    } else if(this.state == State.CLICKED) {
-      this.handleClicked(event);
+    if(this.state == 0) {
+      this.lastMouseEvent = event;
+      this.s0();
+    } else if(this.state == 1) {
+      this.lastMouseEvent = event;
+      this.s1();
+    } else if(this.state == 3) {
+      this.lastMouseEvent = event;
+      this.s3();
+    } else if(this.state == 4) {
+      this.lastMouseEvent = event;
+      this.s5();
     }
   }
 
-  private isInsideResizeRange(event: MouseEvent,
-      element: HTMLElement): boolean {
-    let elementLeft = element.getBoundingClientRect().left;
-    let elementRight = element.getBoundingClientRect().right;
-    return event.clientX >= elementLeft &&
-      event.clientX <= elementLeft + ColumnResizer.RESIZE_RANGE ||
-      event.clientX >= elementRight - ColumnResizer.RESIZE_RANGE &&
-      event.clientX <= elementRight + ColumnResizer.RESIZE_RANGE;
-  }
-
-  private handleNone(event: MouseEvent): void {
-    this.state = State.NONE;
-    let element = document.elementFromPoint(event.clientX, event.clientY) as
-      HTMLElement;
-    let elementLeft = element.getBoundingClientRect().left;
-    let elementRight = element.getBoundingClientRect().right;
-    if(this.isInsideResizeRange(event, element)) {
-      element.style.cursor = 'ew-resize';
-      this.element = element;
-      let xPosition = event.clientX - 2 * ColumnResizer.RESIZE_RANGE - 1;
-      let i = 0;
-      for(i = 0; i < this.columnWidths.length && xPosition > 0; ++i) {
-        xPosition -= this.columnWidths[i];
-      }
-      this.index = i - 1;
-      return this.handleHover(event);
-    }
-  }
-
-  private handleHover(event: MouseEvent): void {
-    this.state = State.HOVER;
-    let elementLeft = this.element.getBoundingClientRect().left;
-    let elementRight = this.element.getBoundingClientRect().right;
-    if(!this.isInsideResizeRange(event, this.element)) {
-      this.element.style.cursor = 'default';
-      this.element = null;
-      return this.handleNone(event);
-    } else if(event.buttons & 1) {
-      this.xPosition = event.clientX;
-      return this.handleClicked(event);
-    }
-  }
-
-  private handleClicked(event: MouseEvent): void {
-    this.state = State.CLICKED;
-    if(!(event.buttons & 1)) {
-      return this.handleHover(event);
-    }
-    let xDelta = event.clientX - this.xPosition;
-    this.xPosition = event.clientX;
-    let boundingRectangle = this.element.getBoundingClientRect();
-    if(xDelta == 0 ||
-        xDelta > 0 && event.clientX < boundingRectangle.left ||
-        xDelta < 0 && event.clientX > boundingRectangle.right) {
+  /** Handles pressing down a mouse button.
+   * @param event - The event describing the button press.
+   */
+  public onMouseDown(event: MouseEvent): void {
+    if(event.button != 0) {
       return;
     }
+    if(this.state == 3) {
+      this.lastMouseEvent = event;
+      return this.s4();
+    }
+  }
+
+  /** Handles releasing a mouse button.
+   * @param event - The event describing the button release.
+   */
+  public onMouseUp(event: MouseEvent): void {
+    if(event.button != 0) {
+      return;
+    }
+    if(this.state == 4) {
+      this.lastMouseEvent = event;
+      return this.s0();
+    }
+  }
+
+  private c0(): boolean {
+    let column = this.view.getColumnHeaderElement(this.columnIndex);
+    if(column == null) {
+      return false;
+    }
+    let boundingBox = column.getBoundingClientRect();
+    return this.lastMouseEvent.clientX >=
+      boundingBox.right - ColumnResizer.RESIZE_RANGE &&
+      this.lastMouseEvent.clientX <=
+      boundingBox.right + ColumnResizer.RESIZE_RANGE;
+  }
+
+  private s0(): void {
+    this.state = 0;
+    if(this.lastMouseEvent == null) {
+      return;
+    }
+    if(this.columnIndex != -1) {
+      let column = this.view.getColumnHeaderElement(this.columnIndex);
+      if(column != null) {
+        column.style.cursor = 'default';
+      }
+      let nextColumn = this.view.getColumnHeaderElement(this.columnIndex + 1);
+      if(nextColumn != null) {
+        nextColumn.style.cursor = 'default';
+      }
+    }
+    this.columnIndex = -1;
+    return this.s1();
+  }
+
+  private s1(): void {
+    this.state = 1;
+    let index = this.view.getColumnHeaderAt(this.lastMouseEvent.clientX,
+      this.lastMouseEvent.clientY);
+    if(index != -1) {
+      let column = this.view.getColumnHeaderElement(index);
+      let boundingBox = column.getBoundingClientRect();
+      if(this.lastMouseEvent.clientX >=
+          boundingBox.right - ColumnResizer.RESIZE_RANGE &&
+          this.lastMouseEvent.clientX <= boundingBox.right) {
+        this.columnIndex = index;
+      } else if(this.lastMouseEvent.clientX >= boundingBox.left &&
+          this.lastMouseEvent.clientX <=
+          boundingBox.left + ColumnResizer.RESIZE_RANGE) {
+        this.columnIndex = index - 1;
+      }
+      if(this.columnIndex != -1) {
+        return this.s2();
+      }
+    }
+  }
+
+  private s2(): void {
+    this.state = 2;
+    let column = this.view.getColumnHeaderElement(this.columnIndex);
+    if(column != null) {
+      column.style.cursor = 'col-resize';
+    }
+    let nextColumn = this.view.getColumnHeaderElement(this.columnIndex + 1);
+    if(nextColumn != null) {
+      nextColumn.style.cursor = 'col-resize';
+    }
+    return this.s3();
+  }
+
+  private s3(): void {
+    this.state = 3;
+    if(!this.c0()) {
+      return this.s0();
+    }
+  }
+
+  private s4(): void {
+    this.state = 4;
+    this.xPosition = this.lastMouseEvent.clientX;
+  }
+
+  private s5(): void {
+    this.state = 5;
+    let xDelta = this.lastMouseEvent.clientX - this.xPosition;
+    let column = this.view.getColumnHeaderElement(this.columnIndex);
+    if(column == null) {
+      return;
+    }
+    let boundingRectangle = column.getBoundingClientRect();
+    if(xDelta == 0 ||
+        xDelta > 0 && this.lastMouseEvent.clientX < boundingRectangle.left ||
+        xDelta < 0 && this.lastMouseEvent.clientX > boundingRectangle.right) {
+      return this.s4();
+    }
     if(xDelta < 0) {
-      let previousWidth = this.columnWidths[this.index];
-      this.columnWidths[this.index] = Math.max(
-        this.columnWidths[this.index] + xDelta,
+      let previousWidth = this.columnWidths[this.columnIndex];
+      this.columnWidths[this.columnIndex] = Math.max(
+        this.columnWidths[this.columnIndex] + xDelta,
         ColumnResizer.MIN_WIDTH);
-      this.columnWidths[this.index + 1] -=
-        this.columnWidths[this.index] - previousWidth;
+      this.columnWidths[this.columnIndex + 1] -=
+        this.columnWidths[this.columnIndex] - previousWidth;
     } else {
-      let previousWidth = this.columnWidths[this.index + 1];
-      this.columnWidths[this.index + 1] = Math.max(
-        this.columnWidths[this.index + 1] - xDelta,
+      let previousWidth = this.columnWidths[this.columnIndex + 1];
+      this.columnWidths[this.columnIndex + 1] = Math.max(
+        this.columnWidths[this.columnIndex + 1] - xDelta,
         ColumnResizer.MIN_WIDTH);
-      this.columnWidths[this.index] -=
-        this.columnWidths[this.index + 1] - previousWidth;
+      this.columnWidths[this.columnIndex] -=
+        this.columnWidths[this.columnIndex + 1] - previousWidth;
     }
     this.resizeCallback();
+    this.s4();
   }
 
   private static RESIZE_RANGE = 5;
   private static MIN_WIDTH = 10;
+  private view: TableView;
   private state: number;
+  private lastMouseEvent: MouseEvent;
   private xPosition: number;
-  private element: HTMLElement;
-  private index: number;
+  private columnIndex: number;
   private columnWidths: Array<number>;
   private resizeCallback: () => void;
 }

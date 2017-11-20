@@ -45,6 +45,9 @@ class SelectionModel extends TableModel {
    * @param event - The event describing the button press.
    */
   public onMouseDown(event: MouseEvent): void {
+    if(event.button != 0) {
+      return;
+    }
     if(this.state == 0) {
       this.lastMouseEvent = event;
       return this.s1();
@@ -55,6 +58,9 @@ class SelectionModel extends TableModel {
    * @param event - The event describing the button release.
    */
   public onMouseUp(event: MouseEvent): void {
+    if(event.button != 0) {
+      return;
+    }
     if(this.state == 1) {
       this.lastMouseEvent = event;
       return this.s0();

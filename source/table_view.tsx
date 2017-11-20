@@ -45,7 +45,7 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     }
     this.topVisibleRow = 0;
     this.bottomVisibleRow = 0;
-    this.columnResizer = new ColumnResizer(this.columnWidths,
+    this.columnResizer = new ColumnResizer(this, this.columnWidths,
       this.onColumnResized.bind(this));
     this.props.model.connectValueChangedSignal(
       this.onModelValueChanged.bind(this));
@@ -76,8 +76,8 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
       this.bottomVisibleRow = Math.min(1, this.props.model.rowCount);
       let viewWidth = Math.floor(parseFloat(window.getComputedStyle(
         this.container, null).getPropertyValue('width')));
-      let initialColumnWidth = Math.floor
-        (viewWidth / this.props.model.columnCount);
+      let initialColumnWidth = Math.floor(
+        viewWidth / this.props.model.columnCount);
       for(let i = 0; i < this.props.model.columnCount; ++i) {
         this.columnWidths[i] = initialColumnWidth;
       }
@@ -93,8 +93,9 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     let columns: Array<JSX.Element> = [];
     let headers: Array<JSX.Element> = [];
     let inlineStyle = {
-      display: 'inline',
-      whiteSpace: 'nowrap'
+      display: 'inline-flex',
+      whiteSpace: 'nowrap',
+      minWidth: '0'
     };
     for(let columnIndex = 0; columnIndex < this.props.model.columnCount;
         ++columnIndex) {
@@ -102,8 +103,12 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
         width: `${this.columnWidths[columnIndex]}px`
       };
       columns.push(<col style={columnStyle} />);
-      headers.push(<th><div style={inlineStyle}>
-        {this.props.model.getName(columnIndex)}</div></th>);
+      headers.push(
+        <th>
+          <div style={inlineStyle}>
+            {this.props.model.getName(columnIndex)}
+          </div>
+        </th>);
     }
     let body: Array<JSX.Element> = [];
     for(let rowIndex = this.topVisibleRow; rowIndex < this.bottomVisibleRow;
@@ -132,7 +137,9 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     table.push.apply(table, columns);
     table.push(
       <thead
-          onMouseMove={this.columnResizer.onMouseMove.bind(this.columnResizer)}>
+          onMouseMove={this.columnResizer.onMouseMove.bind(this.columnResizer)}
+          onMouseDown={this.columnResizer.onMouseDown.bind(this.columnResizer)}
+          onMouseUp={this.columnResizer.onMouseUp.bind(this.columnResizer)}>
         <tr>{headers}</tr>
       </thead>);
     table.push(
@@ -192,7 +199,7 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
    *         specify a row.
    */
   public getRowAt(x: number, y: number): number {
-    if(this.table.rows.length == 0) {
+    if(this.table == null || this.table.rows.length == 0) {
       return -1;
     }
     for(let i = 0; i < this.table.rows.length; ++i) {
@@ -204,6 +211,59 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     return -1;
   }
 
+  /** Returns the column index at a specified coordinate.
+   * @param x - The x-coordinate in client space.
+   * @param y - The y-coordinate in client space.
+   * @return The index of the specified row, or -1 if the coordinate does not
+   *         specify a row.
+   */
+  public getColumnAt(x: number, y: number): number {
+    if(this.table == null || this.table.tHead == null ||
+        this.table.tHead.rows.length == 0) {
+      return -1;
+    }
+    let header = this.table.tHead.rows[0];
+    for(let i = 0; i < header.cells.length; ++i) {
+      let cell = header.cells[i];
+      let cellBoundingBox = cell.getBoundingClientRect();
+      if(x > cellBoundingBox.left && x < cellBoundingBox.right) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /** Returns the column header index at a specified coordinate.
+   * @param x - The x-coordinate in client space.
+   * @param y - The y-coordinate in client space.
+   * @return The index of the specified row, or -1 if the coordinate does not
+   *         specify a row.
+   */
+  public getColumnHeaderAt(x: number, y: number): number {
+    if(this.table == null || this.table.tHead == null ||
+        this.table.tHead.rows.length == 0) {
+      return -1;
+    }
+    let header = this.table.tHead.rows[0];
+    let headerBoundingBox = header.getBoundingClientRect();
+    if(y < headerBoundingBox.top || y > headerBoundingBox.bottom) {
+      return -1;
+    }
+    return this.getColumnAt(x, y);
+  }
+
+  /** Returns the actual column header at a specified index.
+   * @param index - The index of the column.
+   * @return The HTMLElement representing the column header at the given index.
+   */
+  public getColumnHeaderElement(index: number): HTMLElement {
+    if(this.table == null || this.table.tHead == null ||
+        this.table.tHead.rows.length == 0) {
+      return null;
+    }
+    return this.table.tHead.rows[0].cells[index];
+  }
+
   public componentDidMount(): void {
     this.setState(
       {
@@ -212,6 +272,10 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
   }
 
   public componentDidUpdate(): void {
+    for(let i = 0; i < this.columnWidths.length; ++i) {
+      let column = this.getColumnHeaderElement(i);
+      this.columnWidths[i] = column.getBoundingClientRect().width;
+    }
     setTimeout(() => {
       window.requestAnimationFrame(() => {
         if(this.state.initialization == TableViewInitialization.TABLE) {
