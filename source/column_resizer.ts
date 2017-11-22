@@ -37,6 +37,13 @@ class ColumnResizer {
     }
   }
 
+  /** Handles the mouse leaving the region.
+   * @param event - The event describing the mouse leaving.
+   */
+  public onMouseLeave(event: MouseEvent): void {
+    return this.s0();
+  }
+
   /** Handles pressing down a mouse button.
    * @param event - The event describing the button press.
    */
@@ -150,7 +157,7 @@ class ColumnResizer {
     }
     let boundingRectangle = column.getBoundingClientRect();
     if(xDelta == 0 ||
-        xDelta > 0 && this.lastMouseEvent.clientX < boundingRectangle.left ||
+        xDelta > 0 && this.lastMouseEvent.clientX < boundingRectangle.right ||
         xDelta < 0 && this.lastMouseEvent.clientX > boundingRectangle.right) {
       return this.s4();
     }
@@ -174,7 +181,7 @@ class ColumnResizer {
   }
 
   private static RESIZE_RANGE = 5;
-  private static MIN_WIDTH = 10;
+  private static MIN_WIDTH = 30;
   private view: TableView;
   private state: number;
   private lastMouseEvent: MouseEvent;

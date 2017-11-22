@@ -92,17 +92,18 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     }
     let columns: Array<JSX.Element> = [];
     let headers: Array<JSX.Element> = [];
-    let inlineStyle = {
-      display: 'inline-flex',
-      whiteSpace: 'nowrap',
-      minWidth: '0'
-    };
     for(let columnIndex = 0; columnIndex < this.props.model.columnCount;
         ++columnIndex) {
       let columnStyle = {
         width: `${this.columnWidths[columnIndex]}px`
       };
       columns.push(<col style={columnStyle} />);
+      let inlineStyle = {
+        whiteSpace: 'nowrap',
+        overflow: 'hidden' as 'hidden',
+        maxWidth: `${this.columnWidths[columnIndex]}px`,
+        margin: '0 auto'
+      };
       headers.push(
         <th>
           <div style={inlineStyle}>
@@ -138,6 +139,8 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     table.push(
       <thead
           onMouseMove={this.columnResizer.onMouseMove.bind(this.columnResizer)}
+          onMouseLeave={this.columnResizer.onMouseLeave.bind(
+            this.columnResizer)}
           onMouseDown={this.columnResizer.onMouseDown.bind(this.columnResizer)}
           onMouseUp={this.columnResizer.onMouseUp.bind(this.columnResizer)}>
         <tr>{headers}</tr>
@@ -272,22 +275,18 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
   }
 
   public componentDidUpdate(): void {
-    for(let i = 0; i < this.columnWidths.length; ++i) {
-      let column = this.getColumnHeaderElement(i);
-      this.columnWidths[i] = column.getBoundingClientRect().width;
-    }
-    setTimeout(() => {
-      window.requestAnimationFrame(() => {
-        if(this.state.initialization == TableViewInitialization.TABLE) {
+    if(this.state.initialization == TableViewInitialization.TABLE) {
+      setTimeout(() => {
+        window.requestAnimationFrame(() => {
           if(this.props.model.rowCount > 0) {
             this.setState(
               {
                 initialization: TableViewInitialization.COMPLETE
               });
           }
-        }
-      });
-    }, 0);
+        });
+      }, 0);
+    }
   }
 
   private onScroll(): void {
