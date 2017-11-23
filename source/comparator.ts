@@ -1,0 +1,4 @@
+class Comparator {
+}
+
+export {Comparator};
