@@ -5,7 +5,6 @@ import {ColumnResizer} from './column_resizer';
 import {SelectionModel} from './selection_model';
 import {RemovingRowEvent, RowAddedEvent, RowMovedEvent, TableModel,
   ValueChangedEvent} from './table_model';
-import {computeWidth, computeHeight} from './font_metrics';
 
 enum TableViewInitialization {
   CONTAINER,

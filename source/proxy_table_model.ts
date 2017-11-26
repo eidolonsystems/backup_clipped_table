@@ -16,6 +16,10 @@ class ProxyTableModel extends TableModel {
     for(let i = 0; i < this.source.rowCount; ++i) {
       this.rowToSource.push(i);
     }
+    this.source.connectValueChangedSignal(this.onValueChanged.bind(this));
+    this.source.connectRowAddedSignal(this.onRowAdded.bind(this));
+    this.source.connectRemovingRowSignal(this.onRemovingRow.bind(this));
+    this.source.connectRowMovedSignal(this.onRowMoved.bind(this));
     this.valueChangedSignal = new Dispatcher<ValueChangedEvent>();
     this.rowAddedSignal = new Dispatcher<RowAddedEvent>();
     this.removingRowSignal = new Dispatcher<RemovingRowEvent>();
@@ -77,6 +81,41 @@ class ProxyTableModel extends TableModel {
 
   public connectRowMovedSignal(slot: (event: RowMovedEvent) => void): any {
     return this.rowMovedSignal.listen(slot);
+  }
+
+  private onValueChanged(event: ValueChangedEvent): void {
+    let translatedIndex = this.rowToSource[event.row];
+    let changeEvent = new ValueChangedEvent(translatedIndex, event.column,
+      event.previousValue);
+    this.valueChangedSignal.dispatch(changeEvent);
+  }
+
+  private onRowAdded(event: RowAddedEvent): void {
+    for(let i = 0; i < this.rowToSource.length; ++i) {
+      if(this.rowToSource[i] >= event.index) {
+        ++this.rowToSource[i];
+      }
+    }
+    this.rowToSource.splice(event.index, 0, event.index);
+    this.rowAddedSignal.dispatch(event);
+  }
+
+  private onRemovingRow(event: RemovingRowEvent): void {
+    let translatedIndex = this.rowToSource[event.index];
+    let removeEvent = new RemovingRowEvent(translatedIndex);
+    this.removingRowSignal.dispatch(removeEvent);
+    for(let i = 0; i < this.rowToSource.length; ++i) {
+      if(this.rowToSource[i] >= event.index) {
+        --this.rowToSource[i];
+      }
+    }
+    this.rowToSource.splice(event.index, 1);
+  }
+
+  private onRowMoved(event: RowMovedEvent): void {
+    this.rowToSource.splice(event.source, 1);
+    this.rowToSource.splice(event.destination, 0, event.destination);
+//    this.rowAddedSignal.dispatch(event);
   }
 
   private source: TableModel;
