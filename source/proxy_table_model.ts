@@ -13,8 +13,10 @@ class ProxyTableModel extends TableModel {
     super();
     this.source = source;
     this.rowToSource = new Array<number>();
+    this.rowFromSource = new Array<number>();
     for(let i = 0; i < this.source.rowCount; ++i) {
       this.rowToSource.push(i);
+      this.rowFromSource.push(i);
     }
     this.source.connectValueChangedSignal(this.onValueChanged.bind(this));
     this.source.connectRowAddedSignal(this.onRowAdded.bind(this));
@@ -40,12 +42,20 @@ class ProxyTableModel extends TableModel {
     if(source == destination) {
       return;
     }
-    this.rowToSource.splice(source, 1);
+    let direction: number;
     if(destination > source) {
-      this.rowToSource.splice(destination - 1, 1, source);
+      direction = 1;
     } else {
-      this.rowToSource.splice(destination, 1, source);
+      direction = -1;
     }
+    let originalToSource = this.rowToSource[source];
+    for(let i = source; direction * i < direction * destination;
+        i += direction) {
+      this.rowToSource[i] = this.rowToSource[i + direction];
+      this.rowFromSource[this.rowToSource[i]] = i;
+    }
+    this.rowToSource[destination] = originalToSource;
+    this.rowFromSource[this.rowToSource[destination]] = destination;
     this.rowMovedSignal.dispatch(new RowMovedEvent(source, destination));
   }
 
@@ -84,7 +94,7 @@ class ProxyTableModel extends TableModel {
   }
 
   private onValueChanged(event: ValueChangedEvent): void {
-    let translatedIndex = this.rowToSource[event.row];
+    let translatedIndex = this.rowFromSource[event.row];
     let changeEvent = new ValueChangedEvent(translatedIndex, event.column,
       event.previousValue);
     this.valueChangedSignal.dispatch(changeEvent);
@@ -94,32 +104,34 @@ class ProxyTableModel extends TableModel {
     for(let i = 0; i < this.rowToSource.length; ++i) {
       if(this.rowToSource[i] >= event.index) {
         ++this.rowToSource[i];
+        this.rowFromSource[this.rowToSource[i]] = i;
       }
     }
     this.rowToSource.splice(event.index, 0, event.index);
+    this.rowFromSource.splice(event.index, 0, event.index);
     this.rowAddedSignal.dispatch(event);
   }
 
   private onRemovingRow(event: RemovingRowEvent): void {
-    let translatedIndex = this.rowToSource[event.index];
+    let translatedIndex = this.rowFromSource[event.index];
     let removeEvent = new RemovingRowEvent(translatedIndex);
     this.removingRowSignal.dispatch(removeEvent);
     for(let i = 0; i < this.rowToSource.length; ++i) {
       if(this.rowToSource[i] >= event.index) {
         --this.rowToSource[i];
+        this.rowFromSource[this.rowToSource[i]] = i;
       }
     }
     this.rowToSource.splice(event.index, 1);
   }
 
   private onRowMoved(event: RowMovedEvent): void {
-    this.rowToSource.splice(event.source, 1);
-    this.rowToSource.splice(event.destination, 0, event.destination);
-//    this.rowAddedSignal.dispatch(event);
+    // TODO
   }
 
   private source: TableModel;
   private rowToSource: Array<number>;
+  private rowFromSource: Array<number>;
   private valueChangedSignal: Dispatcher<ValueChangedEvent>;
   private rowAddedSignal: Dispatcher<RowAddedEvent>;
   private removingRowSignal: Dispatcher<RemovingRowEvent>;
