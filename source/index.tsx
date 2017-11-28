@@ -1,7 +1,8 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {TableView} from './table_view';
 import {ArrayTableModel} from './array_table_model';
+import {SortedTableModel} from './sorted_table_model';
+import {TableView} from './table_view';
 
 let model = new ArrayTableModel(['Account', 'Currency', 'Acc. Total P/L',
   'Acc. Unrealized', 'Acc. Realized', 'Acc. Fees', 'Security', 'Open Quantity',
@@ -15,9 +16,12 @@ for(let row = 0; row < 1000; ++row) {
   model.addRow(r);
 }
 
+let sortedModel = new SortedTableModel(model);
+
 ReactDOM.render(
   <TableView
-    model={model}
+    model={sortedModel}
+    sortedModel={sortedModel}
     viewWidth='2000px'
     viewHeight='1000px' />,
   document.getElementById('main')

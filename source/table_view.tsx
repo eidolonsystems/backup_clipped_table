@@ -3,6 +3,7 @@ import * as ReactDOM from 'react-dom';
 import * as $ from 'jquery';
 import {ColumnResizer} from './column_resizer';
 import {SelectionModel} from './selection_model';
+import {SortedTableModel} from './sorted_table_model';
 import {RemovingRowEvent, RowAddedEvent, RowMovedEvent, TableModel,
   ValueChangedEvent} from './table_model';
 
@@ -14,6 +15,7 @@ enum TableViewInitialization {
 
 interface TableViewProperties {
   model: TableModel;
+  sortedModel?: SortedTableModel;
   viewWidth: string;
   viewHeight: string;
 }

@@ -78,6 +78,17 @@ class ColumnOrder {
     return -1;
   }
 
+  /** Returns a new ColumnOrder with a reversed direction. */
+  public getReversedColumnOrder(): ColumnOrder {
+    let sortOrder: SortOrder;
+    if(this.sortOrder == SortOrder.ASCENDING) {
+      sortOrder = SortOrder.DESCENDING;
+    } else {
+      sortOrder = SortOrder.ASCENDING;
+    }
+    return new ColumnOrder(this.index, sortOrder);
+  }
+
   private _index: number;
   private _sortOrder: SortOrder;
 }
