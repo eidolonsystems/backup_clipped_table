@@ -7,7 +7,7 @@ import {RemovingRowEvent, RowAddedEvent, RowMovedEvent, TableModel,
 class ArrayTableModelTester {
 
   /** Tests adding rows.
-   * Construct a ArrayTableModel with two columns 'A' and 'B'.
+   * Construct an ArrayTableModel with two columns 'A' and 'B'.
    * Expect a row count of 0 and column count of 2.
    * Validate the column names.
    * Add a row with three values at index 0.

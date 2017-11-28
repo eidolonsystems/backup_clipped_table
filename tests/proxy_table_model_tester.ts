@@ -14,6 +14,8 @@ class ProxyTableModelTester {
    * Validate the column names.
    * Move row 0 to row 1.
    * Expect rows [1, 0, 2].
+   * Update the ArrayTableModel with values [3, 4, 5].
+   * Expect ValueChangedEvents to rows [1, 0, 2] respectively.
    */
   @Test()
   public testMoveRow(): void {
@@ -28,7 +30,23 @@ class ProxyTableModelTester {
     Expect(model.getValue(0, 0)).toEqual(1);
     Expect(model.getValue(1, 0)).toEqual(0);
     Expect(model.getValue(2, 0)).toEqual(2);
-    Expect(false).toEqual(true);
+    let expectedEvent: ValueChangedEvent;
+    model.connectValueChangedSignal(
+      function (event: ValueChangedEvent) {
+        expectedEvent = event;
+      });
+    sourceModel.setValue(0, 0, 3);
+    Expect(expectedEvent.row).toEqual(1);
+    Expect(expectedEvent.column).toEqual(0);
+    Expect(expectedEvent.previousValue).toEqual(0);
+    sourceModel.setValue(1, 0, 4);
+    Expect(expectedEvent.row).toEqual(0);
+    Expect(expectedEvent.column).toEqual(0);
+    Expect(expectedEvent.previousValue).toEqual(1);
+    sourceModel.setValue(2, 0, 5);
+    Expect(expectedEvent.row).toEqual(2);
+    Expect(expectedEvent.column).toEqual(0);
+    Expect(expectedEvent.previousValue).toEqual(2);
   }
 }
 

@@ -4,8 +4,9 @@
   "description": "Provides models to represent and display large data models.",
   "license": "GPL-3.0",
   "scripts": {
-    "compile": "tsc -p . ",
-    "build": "npm run compile && node build/tests/test_runner.js"
+    "compile": "tsc -p .",
+    "test": "node build/tests/test_runner.js",
+    "build": "npm run compile && npm run test && webpack"
   },
   "devDependencies": {
     "typescript": ">=2.5.2",

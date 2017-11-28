@@ -1,4 +1,0 @@
-class Comparator {
-}
-
-export {Comparator};
