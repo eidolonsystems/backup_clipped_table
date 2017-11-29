@@ -8,10 +8,10 @@ let model = new ArrayTableModel(['Account', 'Currency', 'Acc. Total P/L',
   'Acc. Unrealized', 'Acc. Realized', 'Acc. Fees', 'Security', 'Open Quantity',
   'Side', 'Avg. Price', 'Total P/L', 'Unrealized', 'Realized', 'Fees',
   'Cost Basis', 'Volume', 'Trades']);
-for(let row = 0; row < 1000; ++row) {
-  let r = [row];
-  for(let column = 0; column < model.columnCount - 1; ++column) {
-    r.push(row * model.columnCount + column);
+for(let row = 0; row < 10000; ++row) {
+  let r = [];
+  for(let column = 0; column < model.columnCount; ++column) {
+    r.push(Math.floor(Math.random() * 1000000));
   }
   model.addRow(r);
 }

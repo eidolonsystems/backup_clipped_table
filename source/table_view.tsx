@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import * as $ from 'jquery';
 import {ColumnResizer} from './column_resizer';
 import {SelectionModel} from './selection_model';
-import {SortedTableModel} from './sorted_table_model';
+import {SortedTableModel, ColumnOrder} from './sorted_table_model';
 import {RemovingRowEvent, RowAddedEvent, RowMovedEvent, TableModel,
   ValueChangedEvent} from './table_model';
 
@@ -34,6 +34,9 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
       viewY: 0,
       initialization: TableViewInitialization.CONTAINER
     };
+    if(this.props.sortedModel != undefined) {
+      this.sortOrder = this.props.sortedModel.columnOrder;
+    }
     this.selectionModel = new SelectionModel(this, this.props.model);
     this.divStyle = {
       width: this.props.viewWidth,
@@ -142,6 +145,7 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
           onMouseMove={this.columnResizer.onMouseMove.bind(this.columnResizer)}
           onMouseLeave={this.columnResizer.onMouseLeave.bind(
             this.columnResizer)}
+          onClick={this.onHeaderClicked.bind(this)}
           onMouseDown={this.columnResizer.onMouseDown.bind(this.columnResizer)}
           onMouseUp={this.columnResizer.onMouseUp.bind(this.columnResizer)}>
         <tr>{headers}</tr>
@@ -302,6 +306,29 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
     this.forceUpdate();
   }
 
+  private onHeaderClicked(event: MouseEvent): void {
+    if(this.sortOrder === undefined) {
+      return;
+    }
+    let column = this.getColumnAt(event.clientX, event.clientY);
+    if(column == -1) {
+      return;
+    }
+    if(this.sortOrder[0].index == column) {
+      this.sortOrder[0] = this.sortOrder[0].getReversedColumnOrder();
+    } else {
+      for(let i = 1; i < this.sortOrder.length; ++i) {
+        if(this.sortOrder[i].index == column) {
+          let columnOrder = this.sortOrder[i];
+          this.sortOrder.splice(i, 1);
+          this.sortOrder.splice(0, 0, columnOrder);
+          break;
+        }
+      }
+    }
+    this.props.sortedModel.columnOrder = this.sortOrder;
+  }
+
   private onModelValueChanged(event: ValueChangedEvent): void {
     if(event.row < this.topVisibleRow || event.row > this.bottomVisibleRow) {
       return;
@@ -341,6 +368,7 @@ class TableView extends React.Component<TableViewProperties, TableViewState> {
   private bottomVisibleRow: number;
   private container: HTMLDivElement;
   private table: HTMLTableElement;
+  private sortOrder: Array<ColumnOrder>;
 }
 
 export {TableView};

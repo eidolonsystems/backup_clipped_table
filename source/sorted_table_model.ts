@@ -116,19 +116,22 @@ class SortedTableModel extends TableModel {
       this.comparator = comparator;
     }
     if(columnOrder === undefined) {
-      this.setColumnOrder([]);
+      this.columnOrder = [];
     } else {
-      this.setColumnOrder(columnOrder);
+      this.columnOrder = columnOrder;
     }
     this.translatedModel.connectValueChangedSignal(
       this.onValueChanged.bind(this));
     this.translatedModel.connectRowAddedSignal(this.onRowAdded.bind(this));
   }
 
-  /** Sets the order that the columns are sorted by.
-   * @param columnOrder - The list of columns in their sort order.
-   */
-  public setColumnOrder(columnOrder: Array<ColumnOrder>): void {
+  /** Returns the column sort order. */
+  public get columnOrder(): Array<ColumnOrder> {
+    return this._columnOrder.slice();
+  }
+
+  /** Sets the order that the columns are sorted by. */
+  public set columnOrder(columnOrder: Array<ColumnOrder>) {
     for(let i = 0; i != columnOrder.length; ++i) {
       for(let j = 0; j != i; ++j) {
         if(columnOrder[j].index == columnOrder[i].index) {
@@ -139,17 +142,17 @@ class SortedTableModel extends TableModel {
         throw RangeError('Column out of range.');
       }
     }
-    this.columnOrder = columnOrder.slice();
+    this._columnOrder = columnOrder.slice();
     for(let i = 0; i != this.columnCount; ++i) {
       let hasColumn = false;
-      for(let j = 0; j != this.columnOrder.length; ++j) {
-        if(this.columnOrder[j].index == i) {
+      for(let j = 0; j != this._columnOrder.length; ++j) {
+        if(this._columnOrder[j].index == i) {
           hasColumn = true;
           break;
         }
       }
       if(!hasColumn) {
-        this.columnOrder.push(new ColumnOrder(i));
+        this._columnOrder.push(new ColumnOrder(i));
       }
     }
     for(let i = 0; i < this.rowCount; ++i) {
@@ -193,7 +196,7 @@ class SortedTableModel extends TableModel {
   }
 
   private compareRows(leftRow: number, rightRow: number): number {
-    for(let column of this.columnOrder) {
+    for(let column of this._columnOrder) {
       let order = column.direction * this.comparator.compareCells(
         this.translatedModel, leftRow, column.index, rightRow, column.index);
       if(order != 0) {
@@ -247,7 +250,7 @@ class SortedTableModel extends TableModel {
   }
 
   private translatedModel: ProxyTableModel;
-  private columnOrder: Array<ColumnOrder>;
+  private _columnOrder: Array<ColumnOrder>;
   private comparator: Comparator;
 }
 
